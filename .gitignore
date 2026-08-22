@@ -1,0 +1,4 @@
+.env
+audio/*.mp3
+images/*.jpg
+*.apkg
