@@ -1,0 +1,62 @@
+homme | un | m | man | L'homme marche dans la rue.
+femme | une | f | woman | La femme lit un livre.
+chien | un | m | dog | Le chien court vite.
+chat | un | m | cat | Le chat dort sur le lit.
+oiseau | un | m | bird | L'oiseau chante dans l'arbre.
+poisson | un | m | fish | Le poisson nage dans l'eau.
+cheval | un | m | horse | Le cheval mange de l'herbe.
+arbre | un | m | tree | L'arbre est très grand.
+fleur | une | f | flower | La fleur est rouge.
+feuille | une | f | leaf | La feuille tombe de l'arbre.
+herbe | une | f | grass | L'herbe est verte.
+pierre | une | f | stone | Il y a une pierre sur le chemin.
+montagne | une | f | mountain | La montagne est haute.
+rivière | une | f | river | La rivière coule vite.
+plage | une | f | beach | Nous allons à la plage.
+soleil | un | m | sun | Le soleil brille fort.
+lune | une | f | moon | La lune éclaire la nuit.
+étoile | une | f | star | L'étoile brille dans le ciel.
+nuage | un | m | cloud | Le nuage est blanc.
+pluie | une | f | rain | La pluie tombe doucement.
+neige | une | f | snow | La neige est froide.
+maison | une | f | house | J'habite dans cette maison.
+porte | une | f | door | Ouvre la porte, s'il te plaît.
+fenêtre | une | f | window | Regarde par la fenêtre.
+table | une | f | table | Le livre est sur la table.
+chaise | une | f | chair | Je m'assieds sur la chaise.
+lit | un | m | bed | Je vais dans mon lit.
+lampe | une | f | lamp | Allume la lampe.
+miroir | un | m | mirror | Je me regarde dans le miroir.
+livre | un | m | book | Ce livre est intéressant.
+stylo | un | m | pen | J'écris avec un stylo.
+crayon | un | m | pencil | Je dessine au crayon.
+papier | une | f | paper | Écris ton nom sur le papier.
+téléphone | un | m | telephone | Mon téléphone sonne.
+ordinateur | un | m | computer | J'utilise mon ordinateur.
+clé | une | f | key | J'ai perdu ma clé.
+sac | un | m | bag | Mon sac est lourd.
+chaussure | une | f | shoe | Je mets ma chaussure.
+chemise | une | f | shirt | Il porte une chemise bleue.
+pantalon | un | m | pants | Je cherche mon pantalon.
+chapeau | un | m | hat | Il met un chapeau au soleil.
+montre | une | f | watch | Quelle heure est-il sur ta montre ?
+vélo | un | m | bicycle | Je fais du vélo.
+voiture | une | f | car | La voiture est rouge.
+train | un | m | train | Le train arrive en gare.
+bateau | un | m | boat | Le bateau est sur la mer.
+avion | un | m | airplane | L'avion vole dans le ciel.
+pain | un | m | bread | Je mange du pain frais.
+pomme | une | f | apple | La pomme est verte et sucrée.
+tasse | une | f | cup | Je bois dans une tasse.
+marteau | un | m | hammer | Il tape avec un marteau.
+tournevis | un | m | screwdriver | J'ai besoin d'un tournevis.
+clou | un | m | nail | Enfonce ce clou dans le bois.
+vis | une | f | screw | Serre bien cette vis.
+scie | une | f | saw | Je coupe le bois avec une scie.
+pelle | une | f | shovel | Il creuse avec une pelle.
+râteau | un | m | rake | Je ramasse les feuilles avec un râteau.
+balai | un | m | broom | Je nettoie le sol avec un balai.
+été | un | m | summer | J'aime la saison de l'été.
+hiver | un | m | winter | Il fait froid en hiver.
+printemps | un | m | spring | Les fleurs poussent au printemps.
+automne | un | m | autumn | Les feuilles tombent en automne.
