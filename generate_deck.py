@@ -145,7 +145,6 @@ model = genanki.Model(
                 <div class="image">
                     {{Image}}
                 </div>
-
                 <div class="english">
                     {{English}}
                 </div>
@@ -153,9 +152,7 @@ model = genanki.Model(
 
             "afmt": """
                 {{FrontSide}}
-
                 <hr>
-
                 <div class="french">
                     {{Article}} {{French}}
                 </div>
@@ -176,32 +173,68 @@ model = genanki.Model(
             font-size: 30px;
             background-color: white;
             color: black;
+            max-width: 100%;
+            overflow-x: hidden;
+            box-sizing: border-box;
+        }
+        
+        .image {
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+        
+        .mobile .image {
+            width: 75%;
+            max-width: 75%;
+            overflow: hidden;
+            box-sizing: border-box;
+            align-items: center;
+            margin: 0 auto;
         }
 
         .image img {
-            max-width: 500px;
-            max-height: 450px;
-            border-radius: 12px;
-        }
+            display: block;
+            width: 100% !important;
+            max-width: 100% !important;
+            height: auto !important;
 
+            margin: 0 auto;
+            border-radius: 12px;
+            box-sizing: border-box;
+        }
+        
         .english {
-            font-size: 40px;
+            font-size: 34px;
             font-weight: bold;
             margin: 30px;
             color: #888;
         }
+        
+        .mobile .english {
+            font-size: 28px;
+        }
 
         .french {
-            font-size: 44px;
+            font-size: 40px;
             font-weight: bold;
             margin: 25px;
         }
         
+        .mobile .french {
+            font-size: 32px;
+        }
+
         .context {
-            font-size: 24px;
+            font-size: 20px;
             font-style: italic;
             margin: 20px;
             color: #888;
+        }
+        
+        .mobile .context {
+            font-size: 18px;
         }
 
         .audio {
