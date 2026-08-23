@@ -148,10 +148,16 @@ model = genanki.Model(
                 <div class="english">
                     {{English}}
                 </div>
+                <hr>
             """,
 
             "afmt": """
-                {{FrontSide}}
+                <div class="image">
+                    {{Image}}
+                </div>
+                <div class="english">
+                    {{English}}
+                </div>
                 <hr>
                 <div class="french">
                     {{Article}} {{French}}
@@ -239,6 +245,29 @@ model = genanki.Model(
 
         .audio {
             margin: 20px;
+        }
+        
+        textarea {
+            width: 100% !important;
+            max-width: 100% !important;
+            height: auto !important;
+        }
+        
+        .text-field {
+            width: 100%;
+            max-width: 100%;
+            margin: 0 auto;
+            text-align: center;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 40px;
+            font-weight: bold;
+            pointer-events: none;
+        }
+        
+        .text-field::placeholder {
+            color: #888;
         }
     """
 )
