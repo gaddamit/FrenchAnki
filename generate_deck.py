@@ -1,41 +1,32 @@
 from dotenv import load_dotenv
-import os
-
 load_dotenv()
 
+import os
 import asyncio
 import html
 import json
-import re
 from pathlib import Path
 import edge_tts
 import genanki
 import requests
-
-
+from anki_model import Card, create_note
 BASE_DIR = Path(__file__).parent
 
 WORDS_FILE = BASE_DIR / "words.txt"
-IMAGE_DIR = BASE_DIR / "images"
 AUDIO_DIR = BASE_DIR / "audio"
 UNSPLASH_CACHE_FILE = BASE_DIR / "unsplash_cache.json"
 
-IMAGE_DIR.mkdir(exist_ok=True)
 AUDIO_DIR.mkdir(exist_ok=True)
 
 FEMALE_VOICE = "fr-FR-DeniseNeural"
 MALE_VOICE = "fr-FR-HenriNeural"
 
+OUTPUT_FILE_NAME = "FrenchVocabulary.apkg"
+
 
 # ----------------------------------------
 # Helpers
 # ----------------------------------------
-
-def safe_filename(text):
-    text = re.sub(r"[^a-zA-Z0-9_-]", "_", text)
-    return text.lower()
-
-
 def load_unsplash_cache():
     if not UNSPLASH_CACHE_FILE.exists():
         return {}
@@ -49,17 +40,17 @@ def save_unsplash_cache(cache):
         json.dump(cache, file, indent=2, ensure_ascii=False)
 
 
-def get_unsplash_image(search_term, cache):
-    if search_term in cache:
-        print(f"  Using cached Unsplash result for: {search_term}")
-        return cache[search_term]
+def get_unsplash_image(card, cache):
+    if card.english in cache:
+        print(f"  Using cached Unsplash result for: {card.english}")
+        return cache[card.english]
 
-    result = find_unsplash_image(search_term)
+    result = find_unsplash_image(card.english)
 
     if result:
         track_unsplash_download(result["download_location"])
 
-    cache[search_term] = result
+    cache[card.english] = result
     save_unsplash_cache(cache)
 
     return result
@@ -148,194 +139,18 @@ def download_image(url, output_path):
 # Text-to-speech
 # ----------------------------------------
 
-async def generate_audio(text, gender, output_file):
+async def generate_audio(card):
 
-    voice = FEMALE_VOICE if gender == "f" else MALE_VOICE
+    voice = FEMALE_VOICE if card.gender == "f" else MALE_VOICE
 
     communicate = edge_tts.Communicate(
-        text,
+        card.french,
         voice
     )
 
     await communicate.save(
-        str(output_file)
+        str(card.audio_file)
     )
-
-
-# ----------------------------------------
-# Anki model
-# ----------------------------------------
-
-model = genanki.Model(
-    1607392319,
-    "French Vocabulary",
-
-    fields=[
-        {"name": "French"},
-        {"name": "Article"},
-        {"name": "Gender"},
-        {"name": "English"},
-        {"name": "Image"},
-        {"name": "Audio"},
-        {"name": "Context"},
-        {"name": "ImageCredit"}
-    ],
-
-    templates=[
-        {
-            "name": "English to French",
-
-            "qfmt": """
-                <div class="image">
-                    {{Image}}
-                </div>
-                <div class="image-credit">
-                    {{ImageCredit}}
-                </div>
-                <div class="english">
-                    {{English}}
-                </div>
-                <hr>
-            """,
-
-            "afmt": """
-                <div class="image">
-                    {{Image}}
-                </div>
-                <div class="image-credit">
-                    {{ImageCredit}}
-                </div>
-                <div class="english">
-                    {{English}}
-                </div>
-                <hr>
-                <div class="french">
-                    {{Article}} {{French}}
-                </div>
-                <div class="context">
-                    {{Context}}
-                </div>
-                <div class="audio">
-                    {{Audio}}
-                </div>
-            """
-        }
-    ],
-
-    css="""
-        .card {
-            font-family: Arial;
-            text-align: center;
-            font-size: 30px;
-            background-color: white;
-            color: black;
-            max-width: 100%;
-            overflow-x: hidden;
-            box-sizing: border-box;
-        }
-        
-        .image {
-            width: 100%;
-            max-width: 100%;
-            overflow: hidden;
-            box-sizing: border-box;
-        }
-        
-        .mobile .image {
-            width: 75%;
-            max-width: 75%;
-            overflow: hidden;
-            box-sizing: border-box;
-            align-items: center;
-            margin: 0 auto;
-        }
-
-        .image img {
-            display: block;
-            width: 100% !important;
-            max-width: 100% !important;
-            height: auto !important;
-
-            margin: 0 auto;
-            border-radius: 12px;
-            box-sizing: border-box;
-        }
-        
-        .english {
-            font-size: 34px;
-            font-weight: bold;
-            margin: 30px;
-            color: #888;
-        }
-        
-        .mobile .english {
-            font-size: 28px;
-        }
-
-        .french {
-            font-size: 40px;
-            font-weight: bold;
-            margin: 25px;
-        }
-        
-        .mobile .french {
-            font-size: 32px;
-        }
-
-        .context {
-            font-size: 20px;
-            font-style: italic;
-            margin: 20px;
-            color: #888;
-        }
-        
-        .mobile .context {
-            font-size: 18px;
-        }
-
-        .audio {
-            margin: 20px;
-        }
-        
-        textarea {
-            width: 100% !important;
-            max-width: 100% !important;
-            height: auto !important;
-        }
-        
-        .text-field {
-            width: 100%;
-            max-width: 100%;
-            margin: 0 auto;
-            text-align: center;
-            border: none;
-            outline: none;
-            background: transparent;
-            font-size: 40px;
-            font-weight: bold;
-            pointer-events: none;
-        }
-        
-        .text-field::placeholder {
-            color: #888;
-        }
-        
-        .image-credit {
-            font-size: 12px;
-            color: #999;
-            margin-top: 5px;
-            text-align: right;
-        }
-        
-        .mobile .image-credit {
-            font-size: 8px;
-            color: #999;
-            margin-top: 5px;
-            text-align: center;
-        }
-    """
-)
-
 
 deck = genanki.Deck(
     2059400110,
@@ -357,7 +172,7 @@ async def main():
         encoding="utf-8"
     ) as file:
 
-        words = []
+        cards = []
 
         for line in file:
 
@@ -365,54 +180,25 @@ async def main():
 
             if not line:
                 continue
+                
+            cards.append(Card.create_card(line))
 
-            french, article, gender, english, context = line.split("|", 4)
-
-            words.append(
-                (
-                    french.strip(),
-                    article.strip(),
-                    gender.strip(),
-                    english.strip(),
-                    context.strip()
-                )
-            )
-
-
-    print(f"Found {len(words)} words.")
+        print(f"Found {len(cards)} words.")
 
     unsplash_cache = load_unsplash_cache()
-
-    for index, (french, article, gender, english, context) in enumerate(words, 1):
-
-        print(
-            f"[{index}/{len(words)}] {french} → {english}"
-        )
-
-        filename = safe_filename(english)
-
-        image_file = None; 
-        #(
-        #    IMAGE_DIR / f"{filename}.jpg"
-        #)
-
-        audio_file = (
-            AUDIO_DIR / f"{filename}.mp3"
-        )
-
+    index = 1; 
+    for index, card in enumerate(cards, 1):
+        card.print_info(index, len(cards))
 
         # -------------------------
         # Image
         # -------------------------
-
-        image_credit = ""
-
         try:
-            result = get_unsplash_image(english, unsplash_cache)
+            result = get_unsplash_image(card, unsplash_cache)
 
             if result:
-                image_file = result["image_url"]
-                image_credit = (
+                card.image_file = result["image_url"]
+                card.image_credit = (
                     f'Photo by '
                     f'<a href="{result["photographer_url"]}?utm_source=french_vocab_app&utm_medium=referral">'
                     f'{html.escape(result["photographer"])}</a> on '
@@ -421,36 +207,29 @@ async def main():
                 )
             else:
                 print("  No image found.")
-                image_file = None
+                card.image_file = None
 
         except Exception as e:
             print(f"  Image lookup failed: {e}")
-            image_file = None
+            card.image_file = None
 
 
         # -------------------------
         # Audio
         # -------------------------
 
-        if audio_file.exists():
-
+        print(card.audio_file)
+        if card.audio_file.exists():
             print(
                 "  Audio already exists."
             )
-
         else:
-
             print(
                 "  Generating French pronunciation..."
             )
 
             try:
-
-                await generate_audio(
-                    french,
-                    gender,
-                    audio_file
-                )
+                await generate_audio(card)
 
             except Exception as e:
 
@@ -458,70 +237,15 @@ async def main():
                     f"  Audio generation failed: {e}"
                 )
 
-                audio_file = None
+                card.audio_file = None
 
 
         # -------------------------
         # Media
         # -------------------------
-
-        image_html = ""
-
-        if image_file:
-
-            image_html = (
-                f'<img src="{image_file}">'
-            )
-
-            #media_files.append(
-            #    str(image_file)
-            #)
-        else:
-            image_html = (
-                f'<div class="no-image">'
-                f'No image available'
-                f'</div>'
-            )
-
-        audio_html = ""
-
-        if audio_file:
-
-            audio_html = (
-                f"[sound:{audio_file.name}]"
-            )
-
-            media_files.append(
-                str(audio_file)
-            )
-
-
-        # -------------------------
-        # Create Anki note
-        # -------------------------
-
-        note = genanki.Note(
-            model=model,
-
-            fields=[
-                html.escape(french),
-                html.escape(article),
-                html.escape(gender),
-                html.escape(english),
-                image_html,
-                audio_html,
-                html.escape(context),
-                image_credit if image_file else ""
-            ],
-
-            guid=genanki.guid_for(
-                french,
-                article,    
-                gender,
-                english,
-                context
-            )
-        )
+        note = create_note(card)
+        if(card.audio_file):
+            media_files.append(str(card.audio_file))
 
         deck.add_note(note)
 
@@ -540,8 +264,7 @@ async def main():
     package.media_files = media_files
 
     output_file = (
-        BASE_DIR /
-        "FrenchVocabulary.apkg"
+        BASE_DIR / OUTPUT_FILE_NAME
     )
 
     package.write_to_file(
@@ -554,7 +277,6 @@ async def main():
     print("=" * 50)
     print()
     print(f"Deck: {output_file}")
-    print(f"Cards: {len(words)}")
-
+    print(f"Cards: {len(cards)}")
 
 asyncio.run(main())
