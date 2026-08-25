@@ -1,4 +1,5 @@
 .env
 audio/*.mp3
 images/*.jpg
+unsplash_cache.json
 *.apkg

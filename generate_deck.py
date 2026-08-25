@@ -5,9 +5,9 @@ load_dotenv()
 
 import asyncio
 import html
+import json
 import re
 from pathlib import Path
-import os
 import edge_tts
 import genanki
 import requests
@@ -18,6 +18,7 @@ BASE_DIR = Path(__file__).parent
 WORDS_FILE = BASE_DIR / "words.txt"
 IMAGE_DIR = BASE_DIR / "images"
 AUDIO_DIR = BASE_DIR / "audio"
+UNSPLASH_CACHE_FILE = BASE_DIR / "unsplash_cache.json"
 
 IMAGE_DIR.mkdir(exist_ok=True)
 AUDIO_DIR.mkdir(exist_ok=True)
@@ -33,6 +34,35 @@ MALE_VOICE = "fr-FR-HenriNeural"
 def safe_filename(text):
     text = re.sub(r"[^a-zA-Z0-9_-]", "_", text)
     return text.lower()
+
+
+def load_unsplash_cache():
+    if not UNSPLASH_CACHE_FILE.exists():
+        return {}
+
+    with open(UNSPLASH_CACHE_FILE, "r", encoding="utf-8") as file:
+        return json.load(file)
+
+
+def save_unsplash_cache(cache):
+    with open(UNSPLASH_CACHE_FILE, "w", encoding="utf-8") as file:
+        json.dump(cache, file, indent=2, ensure_ascii=False)
+
+
+def get_unsplash_image(search_term, cache):
+    if search_term in cache:
+        print(f"  Using cached Unsplash result for: {search_term}")
+        return cache[search_term]
+
+    result = find_unsplash_image(search_term)
+
+    if result:
+        track_unsplash_download(result["download_location"])
+
+    cache[search_term] = result
+    save_unsplash_cache(cache)
+
+    return result
 
 
 def find_unsplash_image(search_term):
@@ -52,6 +82,7 @@ def find_unsplash_image(search_term):
         "query": search_term,
         "per_page": 10,
         "orientation": "squarish",
+        "content_filter": "high"
     }
 
     headers = {
@@ -85,6 +116,18 @@ def find_unsplash_image(search_term):
         "download_location": photo["links"]["download_location"],
     }
 
+def track_unsplash_download(download_location):
+    access_key = os.getenv("UNSPLASH_ACCESS_KEY")
+
+    response = requests.get(
+        download_location,
+        headers={
+            "Authorization": f"Client-ID {access_key}"
+        },
+        timeout=20
+    )
+
+    response.raise_for_status()
 
 def download_image(url, output_path):
 
@@ -134,7 +177,8 @@ model = genanki.Model(
         {"name": "English"},
         {"name": "Image"},
         {"name": "Audio"},
-        {"name": "Context"}
+        {"name": "Context"},
+        {"name": "ImageCredit"}
     ],
 
     templates=[
@@ -145,6 +189,9 @@ model = genanki.Model(
                 <div class="image">
                     {{Image}}
                 </div>
+                <div class="image-credit">
+                    {{ImageCredit}}
+                </div>
                 <div class="english">
                     {{English}}
                 </div>
@@ -154,6 +201,9 @@ model = genanki.Model(
             "afmt": """
                 <div class="image">
                     {{Image}}
+                </div>
+                <div class="image-credit">
+                    {{ImageCredit}}
                 </div>
                 <div class="english">
                     {{English}}
@@ -269,6 +319,20 @@ model = genanki.Model(
         .text-field::placeholder {
             color: #888;
         }
+        
+        .image-credit {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+            text-align: right;
+        }
+        
+        .mobile .image-credit {
+            font-size: 8px;
+            color: #999;
+            margin-top: 5px;
+            text-align: center;
+        }
     """
 )
 
@@ -317,6 +381,8 @@ async def main():
 
     print(f"Found {len(words)} words.")
 
+    unsplash_cache = load_unsplash_cache()
+
     for index, (french, article, gender, english, context) in enumerate(words, 1):
 
         print(
@@ -325,9 +391,10 @@ async def main():
 
         filename = safe_filename(english)
 
-        image_file = (
-            IMAGE_DIR / f"{filename}.jpg"
-        )
+        image_file = None; 
+        #(
+        #    IMAGE_DIR / f"{filename}.jpg"
+        #)
 
         audio_file = (
             AUDIO_DIR / f"{filename}.mp3"
@@ -338,59 +405,27 @@ async def main():
         # Image
         # -------------------------
 
-        if image_file.exists():
-            print("  Image already exists.")
-        else:
-            result = find_unsplash_image(english)
+        image_credit = ""
+
+        try:
+            result = get_unsplash_image(english, unsplash_cache)
 
             if result:
-
-                try:
-
-                    download_image(
-                        result["image_url"],
-                        image_file
-                    )
-
-                    image_credit = (
-                        f'Photo by '
-                        f'<a href="{result["photographer_url"]}">'
-                        f'{result["photographer"]}'
-                        f'</a> on '
-                        f'<a href="https://unsplash.com/">Unsplash</a>'
-                    )
-
-                except Exception as e:
-
-                    print(f"  Image download failed: {e}")
-                    image_file = None
+                image_file = result["image_url"]
+                image_credit = (
+                    f'Photo by '
+                    f'<a href="{result["photographer_url"]}?utm_source=french_vocab_app&utm_medium=referral">'
+                    f'{html.escape(result["photographer"])}</a> on '
+                    f'<a href="https://unsplash.com/?utm_source=french_vocab_app&utm_medium=referral">'
+                    f'Unsplash</a>'
+                )
             else:
-                result = find_unsplash_image(english)
-                
-                if result:
-    
-                    try:
-    
-                        download_image(
-                            result["image_url"],
-                            image_file
-                        )
-    
-                        image_credit = (
-                            f'Photo by '
-                            f'<a href="{result["photographer_url"]}">'
-                            f'{result["photographer"]}'
-                            f'</a> on '
-                            f'<a href="https://unsplash.com/">Unsplash</a>'
-                        )
-    
-                    except Exception as e:
-    
-                        print(f"  Image download failed: {e}")
-                        image_file = None
-                else:
-                    print("  No image found.")
-                    image_file = None
+                print("  No image found.")
+                image_file = None
+
+        except Exception as e:
+            print(f"  Image lookup failed: {e}")
+            image_file = None
 
 
         # -------------------------
@@ -435,12 +470,12 @@ async def main():
         if image_file:
 
             image_html = (
-                f'<img src="{image_file.name}">'
+                f'<img src="{image_file}">'
             )
 
-            media_files.append(
-                str(image_file)
-            )
+            #media_files.append(
+            #    str(image_file)
+            #)
         else:
             image_html = (
                 f'<div class="no-image">'
@@ -475,7 +510,8 @@ async def main():
                 html.escape(english),
                 image_html,
                 audio_html,
-                html.escape(context)
+                html.escape(context),
+                image_credit if image_file else ""
             ],
 
             guid=genanki.guid_for(
