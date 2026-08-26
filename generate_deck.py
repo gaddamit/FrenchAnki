@@ -143,9 +143,12 @@ async def generate_audio(card):
 
     voice = FEMALE_VOICE if card.gender == "f" else MALE_VOICE
 
+    voice_ssml = f"\n{card.french}\n\n{card.context}"
+
     communicate = edge_tts.Communicate(
-        card.french,
-        voice
+        voice_ssml,
+        voice,
+        rate="-10%"
     )
 
     await communicate.save(

@@ -11,12 +11,13 @@ def safe_filename(text):
     return text.lower()
 
 class Card:
-    def __init__(self, french, article, gender, english, context, image_file, image_credit, audio_file):
+    def __init__(self, french, article, gender, english, context, context_en, image_file, image_credit, audio_file):
         self.french = french
         self.article = article
         self.gender = gender
         self.english = english
         self.context = context
+        self.context_en = context_en
         self.image_file = image_file
         self.image_credit = image_credit
         self.audio_file = audio_file
@@ -25,13 +26,14 @@ class Card:
         return safe_filename(self.english)
     
     def create_card(line):
-        french, article, gender, english, context = (item.strip() for item in line.split("|", 4))
+        french, article, gender, english, context, context_en = (item.strip() for item in line.split("|", 5))
         return Card(
             french,
             article,
             gender,
             english,
             context,
+            context_en,
             image_file=None,
             image_credit=None,
             audio_file=(AUDIO_DIR / f"{safe_filename(english)}.mp3")
@@ -76,6 +78,7 @@ def create_note(card):
             image_html,
             audio_html,
             html.escape(card.context),
+            html.escape(card.context_en),
             card.image_credit if card.image_file else ""
         ],
 
@@ -84,7 +87,8 @@ def create_note(card):
             card.article,    
             card.gender,
             card.english,
-            card.context
+            card.context,
+            card.context_en
         )
 )
 
@@ -104,6 +108,7 @@ model = genanki.Model(
         {"name": "Image"},
         {"name": "Audio"},
         {"name": "Context"},
+        {"name": "Context EN"},
         {"name": "ImageCredit"}
     ],
 
@@ -120,6 +125,7 @@ model = genanki.Model(
                 </div>
                 <div class="english">
                     {{English}}
+                    <p>{{Context EN}}</p>
                 </div>
                 <hr>
             """,
@@ -133,13 +139,12 @@ model = genanki.Model(
                 </div>
                 <div class="english">
                     {{English}}
+                    <p>{{Context EN}}</p>
                 </div>
                 <hr>
                 <div class="french">
                     {{Article}} {{French}}
-                </div>
-                <div class="context">
-                    {{Context}}
+                    <p> {{Context}} </p>
                 </div>
                 <div class="audio">
                     {{Audio}}
@@ -208,10 +213,17 @@ model = genanki.Model(
             font-size: 32px;
         }
 
-        .context {
+        p {
             font-size: 20px;
             font-style: italic;
             margin: 20px;
+            color: #888;
+        }
+
+        .mobile p {
+            font-size: 18px;
+            font-style: italic;
+            margin: 10px;
             color: #888;
         }
         
