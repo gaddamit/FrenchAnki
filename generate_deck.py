@@ -45,7 +45,7 @@ def get_unsplash_image(card, cache):
         print(f"  Using cached Unsplash result for: {card.english}")
         return cache[card.english]
 
-    result = find_unsplash_image(card.english)
+    result = find_unsplash_image(card.search_terms)
 
     if result:
         track_unsplash_download(result["download_location"])

@@ -11,7 +11,7 @@ def safe_filename(text):
     return text.lower()
 
 class Card:
-    def __init__(self, french, article, gender, english, context, context_en, image_file, image_credit, audio_file):
+    def __init__(self, french, article, gender, english, context, context_en, search_terms, image_file, image_credit, audio_file):
         self.french = french
         self.article = article
         self.gender = gender
@@ -21,12 +21,13 @@ class Card:
         self.image_file = image_file
         self.image_credit = image_credit
         self.audio_file = audio_file
+        self.search_terms = search_terms
 
     def get_filename(self):
         return safe_filename(self.english)
     
     def create_card(line):
-        french, article, gender, english, context, context_en = (item.strip() for item in line.split("|", 5))
+        french, article, gender, english, context, context_en, search_terms = (item.strip() for item in line.split("|", 6))
         return Card(
             french,
             article,
@@ -34,6 +35,7 @@ class Card:
             english,
             context,
             context_en,
+            search_terms,
             image_file=None,
             image_credit=None,
             audio_file=(AUDIO_DIR / f"{safe_filename(english)}.mp3")
