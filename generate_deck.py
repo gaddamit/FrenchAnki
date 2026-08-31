@@ -11,21 +11,23 @@ import genanki
 import requests
 from anki_model import NounCard, VerbCard, create_note
 from config import (
-    AUDIO_DIR,
     BASE_DIR,
     CATEGORY_DECKS,
     FEMALE_VOICE,
     MALE_VOICE,
     NOUN_CSV_FIELDS,
+    NOUN_AUDIO_DIR,
     NOUNS_DIR,
     OUTPUT_FILE_NAME,
     UNSPLASH_CACHE_FILE,
     VERB_CSV_FIELDS,
     VERB_DECK,
+    VERB_AUDIO_DIR,
     VERBS_FILE,
 )
 
-AUDIO_DIR.mkdir(exist_ok=True)
+NOUN_AUDIO_DIR.mkdir(parents=True, exist_ok=True)
+VERB_AUDIO_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # ----------------------------------------

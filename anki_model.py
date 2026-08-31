@@ -1,7 +1,7 @@
 import genanki
 import html
 import re
-from config import AUDIO_DIR
+from config import NOUN_AUDIO_DIR, VERB_AUDIO_DIR
 
 
 def safe_filename(text):
@@ -56,7 +56,7 @@ class NounCard(Card):
             context=context,
             context_en=context_en,
             search_terms=search_terms,
-            audio_file=AUDIO_DIR / f"{safe_filename(english)}.mp3",
+            audio_file=NOUN_AUDIO_DIR / f"{safe_filename(english)}.mp3",
         )
         self.article = article
         self.gender = gender
@@ -107,7 +107,7 @@ class VerbCard(Card):
             context=context,
             context_en=context_en,
             search_terms=search_terms,
-            audio_file=AUDIO_DIR / f"verb_{safe_filename(english)}.mp3",
+            audio_file=VERB_AUDIO_DIR / f"verb_{safe_filename(english)}.mp3",
         )
         self.infinitive = infinitive
         self.group = group

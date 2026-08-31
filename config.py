@@ -6,6 +6,8 @@ BASE_DIR = Path(__file__).parent
 NOUNS_DIR = BASE_DIR / "cards" / "nouns"
 VERBS_FILE = BASE_DIR / "cards" / "verbs" / "verbs.csv"
 AUDIO_DIR = BASE_DIR / "audio"
+NOUN_AUDIO_DIR = AUDIO_DIR / "nouns"
+VERB_AUDIO_DIR = AUDIO_DIR / "verbs"
 UNSPLASH_CACHE_FILE = BASE_DIR / "unsplash_cache.json"
 
 FEMALE_VOICE = "fr-FR-DeniseNeural"

@@ -28,7 +28,9 @@ Each card asks for the French noun from an English word, image, and example sent
 ├── cards/
 │   ├── nouns/              # Noun CSV files used by the generator
 │   └── verbs/verbs.csv     # Verb vocabulary
-├── audio/                  # Generated pronunciation files
+├── audio/
+│   ├── nouns/             # Generated noun pronunciation files
+│   └── verbs/             # Generated verb pronunciation files
 ├── anki_model.py           # Card data and Anki note template
 ├── config.py               # Paths, voices, schemas, and deck configuration
 ├── generate_deck.py        # Deck generation script
@@ -128,7 +130,7 @@ To retry a cached result, remove only that word's entry from `unsplash_cache.jso
 
 ## Audio cache
 
-Audio is saved under `audio/`. Existing MP3 files are reused on later runs. Delete a specific MP3 only when you want the script to regenerate that pronunciation.
+Noun audio is saved under `audio/nouns/`, while verb audio is saved under `audio/verbs/`. Existing MP3 files are reused on later runs. Delete a specific MP3 only when you want the script to regenerate that pronunciation.
 
 ## Verb CSV format
 
