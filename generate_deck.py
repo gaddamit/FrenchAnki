@@ -9,7 +9,7 @@ import json
 import edge_tts
 import genanki
 import requests
-from anki_model import Card, create_note
+from anki_model import NounCard, VerbCard, create_note
 from config import (
     AUDIO_DIR,
     BASE_DIR,
@@ -20,6 +20,9 @@ from config import (
     NOUNS_DIR,
     OUTPUT_FILE_NAME,
     UNSPLASH_CACHE_FILE,
+    VERB_CSV_FIELDS,
+    VERB_DECK,
+    VERBS_FILE,
 )
 
 AUDIO_DIR.mkdir(exist_ok=True)
@@ -69,7 +72,7 @@ def load_noun_decks():
 
     for filename, (deck_id, category_name) in CATEGORY_DECKS.items():
         csv_file = NOUNS_DIR / filename
-        cards = load_csv_cards(csv_file, NOUN_CSV_FIELDS, Card.from_csv_row)
+        cards = load_csv_cards(csv_file, NOUN_CSV_FIELDS, NounCard.from_csv_row)
 
         deck = genanki.Deck(
             deck_id,
@@ -78,6 +81,18 @@ def load_noun_decks():
         category_cards.append((deck, cards))
 
     return category_cards
+
+
+def load_verb_deck():
+    deck_id, deck_name = VERB_DECK
+    cards = load_csv_cards(VERBS_FILE, VERB_CSV_FIELDS, VerbCard.from_csv_row)
+    return genanki.Deck(deck_id, deck_name), cards
+
+
+def load_decks():
+    decks_and_cards = load_noun_decks()
+    decks_and_cards.append(load_verb_deck())
+    return decks_and_cards
 
 
 def load_unsplash_cache():
@@ -195,7 +210,7 @@ def download_image(url, output_path):
 async def generate_audio(card):
 
     voice = FEMALE_VOICE
-    if card.gender != "f":
+    if not isinstance(card, NounCard) or card.gender != "f":
         voice = MALE_VOICE
 
     voice_ssml = f"\n{card.french}\n\n{card.context}"
@@ -217,11 +232,11 @@ async def generate_audio(card):
 async def main():
 
     media_files = []
-    category_cards = load_noun_decks()
+    category_cards = load_decks()
     decks = [deck for deck, _ in category_cards]
     total_cards = sum(len(cards) for _, cards in category_cards)
 
-    print(f"Found {total_cards} nouns in {len(decks)} categories.")
+    print(f"Found {total_cards} cards in {len(decks)} decks.")
 
     unsplash_cache = load_unsplash_cache()
     index = 0

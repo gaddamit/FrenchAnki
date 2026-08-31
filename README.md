@@ -1,6 +1,6 @@
 # French Anki Deck Generator
 
-Generate an Anki package for learning French vocabulary. The current generator reads categorized noun cards from CSV files, finds related Unsplash images, creates French audio with Microsoft Edge TTS, and exports the result as `FrenchVocabulary.apkg`.
+Generate an Anki package for learning French vocabulary. The generator reads noun and verb cards from CSV files, finds related Unsplash images, creates French audio with Microsoft Edge TTS, and exports the result as `FrenchVocabulary.apkg`.
 
 ## Deck structure
 
@@ -8,14 +8,15 @@ The generated package contains these subdecks:
 
 ```text
 Learn French
-└── Nouns
-    ├── People and Family
-    ├── Animals
-    ├── Food and Drink
-    ├── Places and Transport
-    ├── Nature and Time
-    ├── Objects
-    └── Abstract
+├── Nouns
+│   ├── People and Family
+│   ├── Animals
+│   ├── Food and Drink
+│   ├── Places and Transport
+│   ├── Nature and Time
+│   ├── Objects
+│   └── Abstract
+└── Verbs
 ```
 
 Each card asks for the French noun from an English word, image, and example sentence. The answer shows the article, French noun, translated sentence, and pronunciation.
@@ -26,7 +27,7 @@ Each card asks for the French noun from an English word, image, and example sent
 .
 ├── cards/
 │   ├── nouns/              # Noun CSV files used by the generator
-│   └── verbs/verbs.csv     # Planned verb data; not generated yet
+│   └── verbs/verbs.csv     # Verb vocabulary
 ├── audio/                  # Generated pronunciation files
 ├── anki_model.py           # Card data and Anki note template
 ├── config.py               # Paths, voices, schemas, and deck configuration
@@ -129,6 +130,12 @@ To retry a cached result, remove only that word's entry from `unsplash_cache.jso
 
 Audio is saved under `audio/`. Existing MP3 files are reused on later runs. Delete a specific MP3 only when you want the script to regenerate that pronunciation.
 
-## Verb data
+## Verb CSV format
 
-`cards/verbs/verbs.csv` contains initial verb vocabulary for future work. The current parser and Anki model intentionally generate noun cards only.
+Verb cards use a separate parser and Anki model. The CSV must use this exact header:
+
+```csv
+infinitive,group,english,context,context_en,search_terms
+```
+
+The `group` value must be `1`, `2`, or `3`. The answer displays the corresponding French group label beside the infinitive.

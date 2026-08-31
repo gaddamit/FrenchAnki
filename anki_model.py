@@ -1,31 +1,66 @@
 import genanki
 import html
-from pathlib import Path
 import re
+from config import AUDIO_DIR
 
-BASE_DIR = Path(__file__).parent
-AUDIO_DIR = BASE_DIR / "audio"
 
 def safe_filename(text):
     text = re.sub(r"[^a-zA-Z0-9_-]", "_", text)
     return text.lower()
 
+
 class Card:
-    def __init__(self, french, article, gender, english, context, context_en, search_terms, image_file, image_credit, audio_file):
+    def __init__(
+        self,
+        french,
+        english,
+        context,
+        context_en,
+        search_terms,
+        audio_file,
+    ):
         self.french = french
-        self.article = article
-        self.gender = gender
         self.english = english
         self.context = context
         self.context_en = context_en
-        self.image_file = image_file
-        self.image_credit = image_credit
-        self.audio_file = audio_file
         self.search_terms = search_terms
+        self.audio_file = audio_file
+        self.image_file = None
+        self.image_credit = None
 
     def get_filename(self):
         return safe_filename(self.english)
-    
+
+    @classmethod
+    def from_csv_row(cls, row):
+        raise NotImplementedError("Card subclasses must implement from_csv_row()")
+
+    def print_info(self, index, total):
+        print(f"{index}/{total} {self.english} -> {self.french}")
+
+
+class NounCard(Card):
+    def __init__(
+        self,
+        french,
+        article,
+        gender,
+        english,
+        context,
+        context_en,
+        search_terms,
+    ):
+        super().__init__(
+            french=french,
+            english=english,
+            context=context,
+            context_en=context_en,
+            search_terms=search_terms,
+            audio_file=AUDIO_DIR / f"{safe_filename(english)}.mp3",
+        )
+        self.article = article
+        self.gender = gender
+
     @classmethod
     def from_csv_row(cls, row):
         french = row["french"].strip()
@@ -44,19 +79,59 @@ class Card:
             context,
             context_en,
             search_terms,
-            image_file=None,
-            image_credit=None,
-            audio_file=(AUDIO_DIR / f"{safe_filename(english)}.mp3")
         )
 
-    def print_info(self, index, total):
-        print(f"{index}/{total} {self.english} -> {self.french}")
+
+class VerbCard(Card):
+    GROUP_LABELS = {
+        "1": "1er groupe · régulier",
+        "2": "2e groupe · régulier",
+        "3": "3e groupe · irrégulier",
+    }
+
+    def __init__(
+        self,
+        infinitive,
+        group,
+        english,
+        context,
+        context_en,
+        search_terms,
+    ):
+        if group not in self.GROUP_LABELS:
+            raise ValueError(f"Unknown French verb group: {group}")
+
+        super().__init__(
+            french=infinitive,
+            english=english,
+            context=context,
+            context_en=context_en,
+            search_terms=search_terms,
+            audio_file=AUDIO_DIR / f"verb_{safe_filename(english)}.mp3",
+        )
+        self.infinitive = infinitive
+        self.group = group
+
+    @property
+    def group_label(self):
+        return self.GROUP_LABELS[self.group]
+
+    @classmethod
+    def from_csv_row(cls, row):
+        return cls(
+            infinitive=row["infinitive"].strip(),
+            group=row["group"].strip(),
+            english=row["english"].strip(),
+            context=row["context"].strip(),
+            context_en=row["context_en"].strip(),
+            search_terms=row["search_terms"].strip(),
+        )
 
 
 # -------------------------
-# Create Anki note
+# Create noun note
 # -------------------------
-def create_note(card):
+def create_noun_note(card):
     image_html = ""
     audio_html = ""
 
@@ -78,7 +153,7 @@ def create_note(card):
     
     
     return genanki.Note(
-        model=model,
+        model=noun_model,
 
         fields=[
             html.escape(card.french),
@@ -106,9 +181,9 @@ def create_note(card):
 # Anki model
 # ----------------------------------------
 
-model = genanki.Model(
+noun_model = genanki.Model(
     1607392319,
-    "French Vocabulary",
+    "French Nouns",
 
     fields=[
         {"name": "French"},
@@ -283,3 +358,114 @@ model = genanki.Model(
         }
     """
 )
+
+
+# ----------------------------------------
+# Verb note and model
+# ----------------------------------------
+def create_verb_note(card):
+    image_html = '<div class="no-image">No image available</div>'
+    if card.image_file:
+        image_html = f'<img src="{card.image_file}">'
+
+    audio_html = ""
+    if card.audio_file:
+        audio_html = f"[sound:{card.audio_file.name}]"
+
+    return genanki.Note(
+        model=verb_model,
+        fields=[
+            html.escape(card.infinitive),
+            html.escape(card.group_label),
+            html.escape(card.english),
+            image_html,
+            audio_html,
+            html.escape(card.context),
+            html.escape(card.context_en),
+            card.image_credit if card.image_file else "",
+        ],
+        guid=genanki.guid_for(
+            "verb",
+            card.infinitive,
+            card.english,
+            card.context,
+            card.context_en,
+        ),
+    )
+
+
+verb_model = genanki.Model(
+    1607392320,
+    "French Verbs",
+    fields=[
+        {"name": "Infinitive"},
+        {"name": "Group"},
+        {"name": "English"},
+        {"name": "Image"},
+        {"name": "Audio"},
+        {"name": "Context"},
+        {"name": "Context EN"},
+        {"name": "ImageCredit"},
+    ],
+    templates=[
+        {
+            "name": "English to French Verb",
+            "qfmt": """
+                <div class="image">
+                    {{Image}}
+                </div>
+                <div class="image-credit">
+                    {{ImageCredit}}
+                </div>
+                <div class="english">
+                    {{English}}
+                    <p>{{Context EN}}</p>
+                </div>
+                <hr>
+            """,
+            "afmt": """
+                <div class="image">
+                    {{Image}}
+                </div>
+                <div class="image-credit">
+                    {{ImageCredit}}
+                </div>
+                <div class="english">
+                    {{English}}
+                    <p>{{Context EN}}</p>
+                </div>
+                <hr>
+                <div class="french">
+                    {{Infinitive}}
+                    <div class="verb-group">{{Group}}</div>
+                    <p>{{Context}}</p>
+                </div>
+                <div class="audio">
+                    {{Audio}}
+                </div>
+            """,
+        }
+    ],
+    css=noun_model.css + """
+        .verb-group {
+            margin-top: 4px;
+            color: #888;
+            font-size: 16px;
+            font-weight: normal;
+        }
+
+        .mobile .verb-group {
+            font-size: 14px;
+        }
+    """,
+)
+
+
+def create_note(card):
+    if isinstance(card, NounCard):
+        return create_noun_note(card)
+
+    if isinstance(card, VerbCard):
+        return create_verb_note(card)
+
+    raise TypeError(f"Unsupported card type: {type(card).__name__}")

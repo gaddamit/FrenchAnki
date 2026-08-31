@@ -4,6 +4,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).parent
 
 NOUNS_DIR = BASE_DIR / "cards" / "nouns"
+VERBS_FILE = BASE_DIR / "cards" / "verbs" / "verbs.csv"
 AUDIO_DIR = BASE_DIR / "audio"
 UNSPLASH_CACHE_FILE = BASE_DIR / "unsplash_cache.json"
 
@@ -22,6 +23,15 @@ NOUN_CSV_FIELDS = [
     "search_terms",
 ]
 
+VERB_CSV_FIELDS = [
+    "infinitive",
+    "group",
+    "english",
+    "context",
+    "context_en",
+    "search_terms",
+]
+
 CATEGORY_DECKS = {
     "people_and_family.csv": (2059400111, "People and Family"),
     "animals.csv": (2059400112, "Animals"),
@@ -34,3 +44,5 @@ CATEGORY_DECKS = {
     "objects.csv": (2059400116, "Objects"),
     "abstract_concepts.csv": (2059400117, "Abstract"),
 }
+
+VERB_DECK = (2059400200, "Learn French::Verbs")
