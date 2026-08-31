@@ -26,9 +26,17 @@ class Card:
     def get_filename(self):
         return safe_filename(self.english)
     
-    def create_card(line):
-        french, article, gender, english, context, context_en, search_terms = (item.strip() for item in line.split("|", 6))
-        return Card(
+    @classmethod
+    def from_csv_row(cls, row):
+        french = row["french"].strip()
+        article = row["article"].strip()
+        gender = row["gender"].strip()
+        english = row["english"].strip()
+        context = row["context"].strip()
+        context_en = row["context_en"].strip()
+        search_terms = row["search_terms"].strip()
+
+        return cls(
             french,
             article,
             gender,
@@ -49,8 +57,8 @@ class Card:
 # Create Anki note
 # -------------------------
 def create_note(card):
-    image_html = None; 
-    audio_html = None; 
+    image_html = ""
+    audio_html = ""
 
     if card.image_file:
         image_html = (
@@ -197,7 +205,7 @@ model = genanki.Model(
         .english {
             font-size: 34px;
             font-weight: bold;
-            margin: 30px;
+            margin: 10px;
             color: #888;
         }
         
@@ -208,7 +216,7 @@ model = genanki.Model(
         .french {
             font-size: 40px;
             font-weight: bold;
-            margin: 25px;
+            margin: 10px;
         }
         
         .mobile .french {

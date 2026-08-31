@@ -3,6 +3,7 @@ load_dotenv()
 
 import os
 import asyncio
+import csv
 import html
 import json
 from pathlib import Path
@@ -12,7 +13,7 @@ import requests
 from anki_model import Card, create_note
 BASE_DIR = Path(__file__).parent
 
-WORDS_FILE = BASE_DIR / "words.txt"
+NOUNS_DIR = BASE_DIR / "nouns"
 AUDIO_DIR = BASE_DIR / "audio"
 UNSPLASH_CACHE_FILE = BASE_DIR / "unsplash_cache.json"
 
@@ -23,10 +24,85 @@ MALE_VOICE = "fr-FR-HenriNeural"
 
 OUTPUT_FILE_NAME = "FrenchVocabulary.apkg"
 
+NOUN_CSV_FIELDS = [
+    "french",
+    "article",
+    "gender",
+    "english",
+    "context",
+    "context_en",
+    "search_terms",
+]
+
+CATEGORY_DECKS = {
+    "people_and_family.csv": (2059400111, "People and Family"),
+    "animals.csv": (2059400112, "Animals"),
+    "food_and_drink.csv": (2059400113, "Food and Drink"),
+    "places_work_education_and_transport.csv": (
+        2059400114,
+        "Places and Transport",
+    ),
+    "nature_weather_and_time.csv": (2059400115, "Nature and Time"),
+    "objects.csv": (2059400116, "Objects"),
+    "abstract_concepts.csv": (2059400117, "Abstract"),
+}
+
 
 # ----------------------------------------
 # Helpers
 # ----------------------------------------
+def load_csv_cards(csv_file, expected_fields, card_factory):
+    if not csv_file.exists():
+        raise FileNotFoundError(f"Missing vocabulary file: {csv_file}")
+
+    with open(csv_file, "r", encoding="utf-8", newline="") as file:
+        reader = csv.DictReader(file)
+
+        if reader.fieldnames != expected_fields:
+            raise ValueError(
+                f"Invalid columns in {csv_file.name}. "
+                f"Expected: {', '.join(expected_fields)}"
+            )
+
+        cards = []
+        for row_number, row in enumerate(reader, start=2):
+            missing_fields = [
+                field for field in expected_fields
+                if not row.get(field, "").strip()
+            ]
+
+            if missing_fields:
+                raise ValueError(
+                    f"Missing value(s) in {csv_file.name}, row {row_number}: "
+                    f"{', '.join(missing_fields)}"
+                )
+
+            try:
+                cards.append(card_factory(row))
+            except (KeyError, ValueError) as error:
+                raise ValueError(
+                    f"Invalid value in {csv_file.name}, row {row_number}: {error}"
+                ) from error
+
+    return cards
+
+
+def load_noun_decks():
+    category_cards = []
+
+    for filename, (deck_id, category_name) in CATEGORY_DECKS.items():
+        csv_file = NOUNS_DIR / filename
+        cards = load_csv_cards(csv_file, NOUN_CSV_FIELDS, Card.from_csv_row)
+
+        deck = genanki.Deck(
+            deck_id,
+            f"Learn French::Nouns::{category_name}",
+        )
+        category_cards.append((deck, cards))
+
+    return category_cards
+
+
 def load_unsplash_cache():
     if not UNSPLASH_CACHE_FILE.exists():
         return {}
@@ -141,7 +217,9 @@ def download_image(url, output_path):
 
 async def generate_audio(card):
 
-    voice = FEMALE_VOICE if card.gender == "f" else MALE_VOICE
+    voice = FEMALE_VOICE
+    if card.gender != "f":
+        voice = MALE_VOICE
 
     voice_ssml = f"\n{card.french}\n\n{card.context}"
 
@@ -155,12 +233,6 @@ async def generate_audio(card):
         str(card.audio_file)
     )
 
-deck = genanki.Deck(
-    2059400110,
-    "French Vocabulary"
-)
-
-
 # ----------------------------------------
 # Main
 # ----------------------------------------
@@ -168,89 +240,75 @@ deck = genanki.Deck(
 async def main():
 
     media_files = []
+    category_cards = load_noun_decks()
+    decks = [deck for deck, _ in category_cards]
+    total_cards = sum(len(cards) for _, cards in category_cards)
 
-    with open(
-        WORDS_FILE,
-        "r",
-        encoding="utf-8"
-    ) as file:
-
-        cards = []
-
-        for line in file:
-
-            line = line.strip()
-
-            if not line:
-                continue
-                
-            cards.append(Card.create_card(line))
-
-        print(f"Found {len(cards)} words.")
+    print(f"Found {total_cards} nouns in {len(decks)} categories.")
 
     unsplash_cache = load_unsplash_cache()
-    index = 1; 
-    for index, card in enumerate(cards, 1):
-        card.print_info(index, len(cards))
+    index = 0
+    for deck, cards in category_cards:
+        print(f"\nCategory: {deck.name} ({len(cards)} cards)")
 
-        # -------------------------
-        # Image
-        # -------------------------
-        try:
-            result = get_unsplash_image(card, unsplash_cache)
+        for card in cards:
+            index += 1
+            card.print_info(index, total_cards)
 
-            if result:
-                card.image_file = result["image_url"]
-                card.image_credit = (
-                    f'Photo by '
-                    f'<a href="{result["photographer_url"]}?utm_source=french_vocab_app&utm_medium=referral">'
-                    f'{html.escape(result["photographer"])}</a> on '
-                    f'<a href="https://unsplash.com/?utm_source=french_vocab_app&utm_medium=referral">'
-                    f'Unsplash</a>'
-                )
-            else:
-                print("  No image found.")
-                card.image_file = None
-
-        except Exception as e:
-            print(f"  Image lookup failed: {e}")
-            card.image_file = None
-
-
-        # -------------------------
-        # Audio
-        # -------------------------
-
-        print(card.audio_file)
-        if card.audio_file.exists():
-            print(
-                "  Audio already exists."
-            )
-        else:
-            print(
-                "  Generating French pronunciation..."
-            )
-
+            # -------------------------
+            # Image
+            # -------------------------
             try:
-                await generate_audio(card)
+                result = get_unsplash_image(card, unsplash_cache)
+
+                if result:
+                    card.image_file = result["image_url"]
+                    card.image_credit = (
+                        f'Photo by '
+                        f'<a href="{result["photographer_url"]}?utm_source=french_vocab_app&utm_medium=referral">'
+                        f'{html.escape(result["photographer"])}</a> on '
+                        f'<a href="https://unsplash.com/?utm_source=french_vocab_app&utm_medium=referral">'
+                        f'Unsplash</a>'
+                    )
+                else:
+                    print("  No image found.")
+                    card.image_file = None
 
             except Exception as e:
+                print(f"  Image lookup failed: {e}")
+                card.image_file = None
 
+            # -------------------------
+            # Audio
+            # -------------------------
+            print(card.audio_file)
+            if card.audio_file.exists():
                 print(
-                    f"  Audio generation failed: {e}"
+                    "  Audio already exists."
+                )
+            else:
+                print(
+                    "  Generating French pronunciation..."
                 )
 
-                card.audio_file = None
+                try:
+                    await generate_audio(card)
 
+                except Exception as e:
+                    print(
+                        f"  Audio generation failed: {e}"
+                    )
 
-        # -------------------------
-        # Media
-        # -------------------------
-        note = create_note(card)
-        if(card.audio_file):
-            media_files.append(str(card.audio_file))
+                    card.audio_file = None
 
-        deck.add_note(note)
+            # -------------------------
+            # Media
+            # -------------------------
+            note = create_note(card)
+            if card.audio_file:
+                media_files.append(str(card.audio_file))
+
+            deck.add_note(note)
 
 
     # --------------------------------
@@ -261,7 +319,7 @@ async def main():
     print("Creating Anki package...")
 
     package = genanki.Package(
-        deck
+        decks
     )
 
     package.media_files = media_files
@@ -280,6 +338,8 @@ async def main():
     print("=" * 50)
     print()
     print(f"Deck: {output_file}")
-    print(f"Cards: {len(cards)}")
+    print(f"Categories: {len(decks)}")
+    print(f"Cards: {total_cards}")
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
